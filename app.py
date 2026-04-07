@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, session
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
-
+app.secret_key = "secret123"
 # Load dataset
 df = pd.read_csv("coursera.csv")
 df = df.fillna("")
@@ -39,9 +39,24 @@ def recommend_from_input(user_profile):
 # Home page
 @app.route("/")
 def home():
-    return render_template("index.html")
+    if 'user' in session:
+        return render_template("index.html")
+    return redirect("/login")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
 
+        # simple demo login
+        if email == "admin@gmail.com" and password == "1234":
+            session["user"] = email
+            return redirect("/")
+        else:
+            return "Invalid login"
+
+    return render_template("login.html")
 # Recommendation route
 @app.route("/recommend", methods=["POST"])
 def recommend():
@@ -63,3 +78,7 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect("/login")
